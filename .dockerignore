@@ -1,0 +1,9 @@
+Dockerfile
+.git*
+.cache*
+**/*.pyc
+**/*.pyo
+**/*.pyd
+__pycache__
+k8s/
+caller/
