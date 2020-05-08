@@ -13,7 +13,7 @@ app = Flask(__name__)
 
 @app.route('/', methods=['GET'])
 def server_check():
-    return "SO HAPPY! "
+    return "I'M ALIVE!"
 
 @app.route('/predict', methods=['POST'])
 def predictor():
@@ -31,4 +31,4 @@ def predictor():
     return jsonify(status='ok', predict=pred)
 
 if __name__=='__main__':
-    app.run( debug=True, host='0.0.0.0' ) #, port=int(os.environ.get('PORT', 8080)) )
+    app.run( debug=True, host='0.0.0.0' )
