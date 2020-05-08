@@ -17,7 +17,7 @@ steps:
       - 'gcr.io/$PROJECT_ID/gkecicd:latest'
       - '.'
   # push the container image to Container Registry with all tags
-  - name: 'gcr.io/cloud-builders/docker''
+  - name: 'gcr.io/cloud-builders/docker'
     args:
       - 'push'
       - 'gcr.io/$PROJECT_ID/gkecicd'
