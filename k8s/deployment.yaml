@@ -5,10 +5,12 @@ metadata:
   namespace: default
   labels:
     app: ml-api
+    project: PROJECT_ID
+    commit_sha: COMMIT_SHA
 spec:
   replicas: 2
   minReadySeconds: 5
-  strategy: 
+  strategy:
     type: RollingUpdate
     rollingUpdate:
       maxSurge: 25%
@@ -24,7 +26,7 @@ spec:
     spec:
       containers:
       - name: ml-container
-        image: gcr.io/PROJECT_ID/appcicd:COMMIT_SHA
+        image: gcr.io/PROJECT_ID/gkecicd:COMMIT_SHA
         ports:
         - containerPort: 8080
         env:
@@ -33,10 +35,7 @@ spec:
         lifecycle:
           preStop:
             exec:
-              command: 
-                - "sh"
-                - "-c"
-                - "sleep 5"
+              command: [ "sh", "-c", "sleep 5" ]
         readinessProbe:
           initialDelaySeconds: 5
           periodSeconds: 5

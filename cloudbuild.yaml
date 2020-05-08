@@ -4,23 +4,23 @@ steps:
     entrypoint: 'bash'
     args:
       - '-c'
-      - 'docker pull gcr.io/$PROJECT_ID/appcicd:latest || exit 0'
+      - 'docker pull gcr.io/$PROJECT_ID/gkecicd:latest || exit 0'
   # build the container image
   - name: 'gcr.io/cloud-builders/docker'
     args:
       - 'build'
       - '-t'
-      - 'gcr.io/$PROJECT_ID/appcicd:latest'
+      - 'gcr.io/$PROJECT_ID/gkecicd:latest'
       - '-t'
-      - 'gcr.io/$PROJECT_ID/appcicd:$COMMIT_SHA'
+      - 'gcr.io/$PROJECT_ID/gkecicd:$COMMIT_SHA'
       - '--cache-from'
-      - 'gcr.io/$PROJECT_ID/appcicd:latest'
+      - 'gcr.io/$PROJECT_ID/gkecicd:latest'
       - '.'
   # push the container image to Container Registry with all tags
   - name: 'gcr.io/cloud-builders/docker''
     args:
       - 'push'
-      - 'gcr.io/$PROJECT_ID/appcicd'
+      - 'gcr.io/$PROJECT_ID/gkecicd'
   # edit deployment manifest replacing PROJECT_ID and COMMIT_SHA into
   # container image address
   - name: 'gcr.io/cloud-builders/gcloud'
