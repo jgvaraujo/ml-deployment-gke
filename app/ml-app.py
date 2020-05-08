@@ -13,7 +13,7 @@ app = Flask(__name__)
 
 @app.route('/', methods=['GET'])
 def server_check():
-    return "I'M ALIVE!"
+    return "SO HAPPY! "
 
 @app.route('/predict', methods=['POST'])
 def predictor():
