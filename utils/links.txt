@@ -1,0 +1,19 @@
+https://medium.com/platformer-blog/enable-rolling-updates-in-kubernetes-with-zero-downtime-31d7ec388c81
+https://www.bluematador.com/blog/kubernetes-deployments-rolling-update-configuration
+https://kubernetes.io/docs/concepts/workloads/controllers/deployment/ [minReadySeconds]
+https://blog.gruntwork.io/gracefully-shutting-down-pods-in-a-kubernetes-cluster-328aecec90d
+https://blog.gruntwork.io/delaying-shutdown-to-wait-for-pod-deletion-propagation-445f779a8304
+https://medium.com/platformer-blog/ci-cd-with-gke-and-google-cloud-build-98a797ecf346
+https://cloud.google.com/kubernetes-engine/docs/tutorials/gitops-cloud-build#create_the_continuous_delivery_pipeline
+
+Endpoints:
+  https://cloud.google.com/blog/products/api-management/understanding-grpc-openapi-and-rest-and-when-to-use-them
+  https://www.youtube.com/watch?v=4PgX3yBJEyw
+  https://cloud.google.com/endpoints/docs/openapi/get-started-kubernetes-engine#python
+  https://cloud.google.com/endpoints/docs/openapi/configure-endpoints
+  Example of Swagger json:
+    https://github.com/GoogleCloudPlatform/python-docs-samples/blob/master/endpoints/getting-started/openapi.yaml
+  gRPC:
+    https://cloud.google.com/endpoints/docs/grpc/get-started-kubernetes-engine
+  https://cloud.google.com/endpoints/docs/openapi/enabling-ssl
+  https://github.com/GoogleCloudPlatform/python-docs-samples/blob/master/endpoints/getting-started/deployment.yaml

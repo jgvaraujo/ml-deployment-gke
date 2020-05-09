@@ -25,6 +25,16 @@ spec:
         app: ml-api
     spec:
       containers:
+      # [START Extensible Service Proxy (ESP)]
+      - name: esp
+        image: gcr.io/endpoints-release/endpoints-runtime:1
+        args: [
+          "--http_port=8081",
+          "--backend=127.0.0.1:8080",
+          "--service=ml-model.endpoints.PROJECT_ID.cloud.goog",
+          "--rollout_strategy=managed",
+        ]
+      # [END Extensible Service Proxy (ESP)]
       - name: ml-container
         image: gcr.io/PROJECT_ID/gkecicd:COMMIT_SHA
         ports:

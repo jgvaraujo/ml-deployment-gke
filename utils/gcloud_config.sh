@@ -8,7 +8,10 @@ PROJECT_NUMBER=$(gcloud projects describe $PROJECT_ID --format='get(projectNumbe
 gcloud services enable container.googleapis.com \
     cloudbuild.googleapis.com \
     sourcerepo.googleapis.com \
-    containeranalysis.googleapis.com
+    containeranalysis.googleapis.com \
+    servicemanagement.googleapis.com \
+    servicecontrol.googleapis.com \
+    endpoints.googleapis.com
 
 # Grant the Kubernetes Engine Developer role to the Cloud Build service account
 gcloud projects add-iam-policy-binding $PROJECT_ID \
