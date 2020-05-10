@@ -34,14 +34,16 @@ spec:
           "--service", "ml-model.endpoints.PROJECT_ID.cloud.goog",
           "--rollout_strategy", "managed",
         ]
+        ports:
+        - containerPort: 8081
       # [END Extensible Service Proxy (ESP)]
       - name: ml-container
         image: gcr.io/PROJECT_ID/gkecicd:COMMIT_SHA
         ports:
         - containerPort: 8080
         env:
-          - name: PORT
-            value: "8080"
+        - name: PORT
+          value: "8080"
         lifecycle:
           preStop:
             exec:

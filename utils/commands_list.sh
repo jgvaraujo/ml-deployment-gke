@@ -18,7 +18,7 @@ gcloud container clusters create $_CLUSTER \
     --zone $_ZONE
 
 # check nodes state
-kubectl get nodes,pods,svc
+  kubectl get nodes,pods,svc
 
 # check pods state every 0.5 seconds
 # this command is greate to see how a new deployment is going
@@ -29,11 +29,4 @@ kubectl rollout status deployment/ml-deployment
 
 # delete cluster
 gcloud container clusters delete $_CLUSTER --zone $_ZONE
-
-##############################################
-### IMPORTANT!                             ###
-###  Do not use this commands in sequence. ###
-### Just copy and paste in you terminal    ###
-### as needed.                             ###
-##############################################
 
