@@ -17,3 +17,4 @@ Endpoints:
     https://cloud.google.com/endpoints/docs/grpc/get-started-kubernetes-engine
   https://cloud.google.com/endpoints/docs/openapi/enabling-ssl
   https://github.com/GoogleCloudPlatform/python-docs-samples/blob/master/endpoints/getting-started/deployment.yaml
+  https://cloud.google.com/endpoints/docs/openapi/openapi-extensions

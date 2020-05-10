@@ -17,3 +17,7 @@ gcloud services enable container.googleapis.com \
 gcloud projects add-iam-policy-binding $PROJECT_ID \
   --member "serviceAccount:$PROJECT_NUMBER@cloudbuild.gserviceaccount.com" \
   --role "roles/container.developer"
+
+gcloud iam service-accounts create caller-service \
+  --description "An API caller service" \
+  --display-name "Caller Service"
