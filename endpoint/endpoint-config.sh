@@ -10,3 +10,4 @@ sed "s/HOST_NAME/${ENDPOINTS_SERVICE_NAME}/g" openapi.yaml > /tmp/openapi.yaml
 
 gcloud endpoints services deploy /tmp/openapi.yaml
 gcloud services enable $ENDPOINTS_SERVICE_NAME
+# gcloud endpoints services delete $ENDPOINTS_SERVICE_NAME

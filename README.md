@@ -1,4 +1,4 @@
-# Machine Learning model deployment pipeline in GKE
+# Machine Learning model deployment pipeline in GKE using Cloud Endpoints (OpenAPI version)
 
 _João Araujo, May 08, 2020_ 
 
@@ -15,7 +15,19 @@ gcloud projects add-iam-policy-binding $PROJECT_ID \
   --role "roles/container.developer"
 ```
 
-Be sure that you have `kubectl` installed in you machine. `kubectl`is a command line tool for controlling *Kubernetes* clusters. If you don't, please read the installation guide [[1]](#L1). I recommend you to install `kubectl`via [Homebrew](https://docs.brew.sh/Homebrew-on-Linux).
+You'll need to activate some Google Cloud APIs before go through this article. Again, you can do this in point'n'click or using the SDK:
+
+```bash
+gcloud services enable container.googleapis.com \
+    cloudbuild.googleapis.com \
+    sourcerepo.googleapis.com \
+    containeranalysis.googleapis.com \
+    servicemanagement.googleapis.com \
+    servicecontrol.googleapis.com \
+    endpoints.googleapis.com
+```
+
+To work with Kubernetes, be sure that you have `kubectl` installed in you machine. `kubectl`is a command line tool for controlling *Kubernetes* clusters. If you don't, please read the installation guide [[1]](#L1). I recommend you to install `kubectl`via [Homebrew](https://docs.brew.sh/Homebrew-on-Linux).
 
 Now, we create our Kubernetes cluster in GKE using this simple command:
 
@@ -43,7 +55,7 @@ To check if everything is up you can use the command `kubectl get all`. To be mo
 
 ## Toy problem & the model entity
 
-In this article, I used the scikit-learn [Boston data set](https://scikit-learn.org/stable/datasets/index.html#boston-house-prices-dataset) to create my ML model. It is a regression of a continuous target variable, namely, price. To make it even simpler, I trained a [Linear Regression](https://scikit-learn.org/stable/modules/generated/sklearn.linear_model.LinearRegression.html) model that also belongs to the scikit-learn package, but I could choose any other model (XGBoost, LightGBM, ...).
+In this article, I used the scikit-learn [Boston data set](https://scikit-learn.org/stable/datasets/index.html#boston-house-prices-dataset) to create my ML model. It is a regression of a continuous target variable, namely, price. To make it even simpler, I trained a [Linear Regression](https://scikit-learn.org/stable/modules/generated/sklearn.linear_model.LinearRegression.html) model that also belongs to the scikit-learn package, but you could choose any other model (XGBoost, LightGBM, ...).
 
 The folder named `train` contains a Python file, `boston_problem.py`, that loads the dataset, saves a JSON file (`example.json`) for test and saves the scikit-learn model object into a Pickle file (`ml-model.pkl`). Here is the most important part of the code: 
 
@@ -139,11 +151,60 @@ I choose a small operating system to build images faster and put the less prone 
 
 `gunicorn` is a lightweight WSGI HTTP server that is commonly used in production deployments. It has the capability to do some kind of load balancing creating replicas of the application's process in the container OS. This is very useful in scenarios where we have lots of simultaneous requests or when our application may fail. In the last scenario, `gunicorn`will kill and replace the failed process.
 
-The `--bind` argument is to set the container address of the application, in this case, in the localhost in port 8080. The `--workers` is to set the number of replicas of the application's process. A recommended number of workers is `2*cores + 1`. The `ml-app:app` means that the object of our application is in `ml-app.py` and its name is `app`.
+The `--bind` argument is to set the container address of the application, in this case, in the localhost in port 8080. The `--workers` is to set the number of replicas of the application's process. A recommended number of workers is `2*cores + 1`. I choose 5 workers because I'll use nodes will 2 vCPUs in my cluster. The `ml-app:app` means that the object of our application is in `ml-app.py` and its name is `app`.
+
+## Deploying an application in Kubernetes
+
+Deploy an application in Kubernetes is very simple. You only need some YAML configuration file templates. In this project I brought you two of then. A file to the deployment itself and another to the service that will expose the application. If you need to deploy you own model, you will need just to change some names, labels and container information sections. This two files are in folder `k8s`. Take a look over there.
+
+**IMPORTANT: In Kubernetes, when you expose an application service, all the world can access it. This isn't secure and you'll need a API gateway to expose it. I'll use Google Cloud Endpoints to do that. If you don't know the benefits of an API gateway, check this simple Red Hat article [[5]](#L5).**
+
+### A simple Kubernetes deployment (unsecure)
+
+Kubernetes has lots of objects, take a look at [this table](https://kubernetes.io/docs/reference/kubectl/overview/#resource-types), it's huge. However, in this project I'll need only two of then: Deployment and Service objects. 
+
+First, let's go with the Deployment object. To explain all the sections of the `deployment.yaml` YAML configuration file, I'll break it in pieces.
+
+#### Piece 1: The Deployment object definition
+
+```yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ml-deployment
+  namespace: default
+  labels:
+    app: ml-api
+```
+
+- `apiVersion`: Which version of the Kubernetes API you'll use. If you research, you can find that Kubernetes has beta version features/objects and other extensions. You don't need to understand this deeply.
+- `kind`: What kind of object you want to create. In this case, a Deployment.
+- `metadata.name`: Whatever you want.
+- `metadata.namespace`: Namespaces are some kind of workspaces. You can use it to organize your Kubernetes objects. I'll use the `default` for simplicity.
+- `metadata.labels`: Whatever you want. Just choose a key and a value. Labels are another kind of organization and it can be used to filter objects in your cluster. The key `app` that I created will be used find some objects in process of deployment.
+
+#### Piece 2: The Deployment object specification
+
+```yaml
+spec:
+  replicas: 2
+  minReadySeconds: 5
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 25%
+      maxUnavailable: 25%
+  selector:
+    matchLabels:
+      app: ml-api
+```
+
+- `replicas`: Number of pods running the deployment of the containers images that will be described below. Scale as you want.
+- `minReadySeconds`: ...
 
 ## Continuous Integration
 
-In my previous project in GitHub, I described how to set a Google Cloud Build trigger to a GitHub repository. Please go to Git Repo section in this project to see how to do it [[4]](#L4).
+In my previous project in GitHub, I described how to set a Google Cloud Build trigger to a GitHub repository. Please go to [Git Repo](https://github.com/jgvaraujo/ml-deployment-on-gcloud#git-repo) section in this project to see how to do it [[4]](#L4).
 
 ## References
 
@@ -154,3 +215,5 @@ In my previous project in GitHub, I described how to set a Google Cloud Build tr
 <a name="L3">[3]</a> Docker Documentation, ["Docker overview"](https://docs.docker.com/get-started/overview/). _(visited in May 8, 2020)_
 
 <a name="L4">[4]</a> João Araujo, ["Machine Learning deployment pipeline on Google Cloud Run"](https://github.com/jgvaraujo/ml-deployment-on-gcloud#docker--dockerfile). _(visited May 8, 2020)
+
+<a name="L5">[5]</a> Red Hat, ["What does an API gateway do?"](https://www.redhat.com/en/topics/api/what-does-an-api-gateway-do). _(visited May 10, 2020)_
