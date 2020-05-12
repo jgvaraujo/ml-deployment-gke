@@ -159,15 +159,13 @@ What is? Credentials and API Keys
 
 Deploy an application in Kubernetes is very simple. You only need some YAML configuration file templates. In this project I brought you two of them. A file to the deployment itself and another to the service that will expose the application. If you need to deploy you own model, you will need just to change some names, labels and container information sections. This two files are in folder `k8s`. Take a look over there.
 
-**IMPORTANT:** *In Kubernetes, when you expose an application service, all the world can access it. This isn't secure and you'll need a API gateway to expose it. I'll use Google Cloud Endpoints to do that. If you don't know the benefits of an API gateway, check this simple Red Hat's article [[5]](#L5).*
-
-### A simple Kubernetes deployment
+**IMPORTANT:** *In Kubernetes, when you expose an application service, all the world can access it. This isn't secure and you'll need a API gateway to expose it. I'll use Google Cloud Endpoints to do that. If you don't know the benefits of an API gateway, check this simple Red Hat's article [[5]](#L5).
 
 Kubernetes has lots of objects, take a look at [this table](https://kubernetes.io/docs/reference/kubectl/overview/#resource-types), it's huge. However, in this project I'll need only two of them: Deployment and Service objects. 
 
 First, let's go with the Deployment object described in `k8s/deployment.yaml`. To explain all the sections of this YAML configuration file, I'll break it in parts 1 to 5. And then, I'll go to the `k8s/service.yaml` in part 6.
 
-#### Part 1: Deployment object definition
+### Part 1: Deployment object definition
 
 ```yaml
 apiVersion: apps/v1
@@ -179,13 +177,13 @@ metadata:
     app: ml-api
 ```
 
-- `apiVersion`: Which version of the Kubernetes API you'll use. If you research, you can find that Kubernetes has beta version features/objects and other extensions. You don't need to understand this deeply.
+- `apiVersion`: Which version of the Kubernetes API you'll use. If you research, you can find that Kubernetes has beta versions, features/objects, applications and other extensions. You don't need to understand this deeply.
 - `kind`: What kind of object you want to create. In this case, a Deployment.
 - `metadata.name`: Whatever you want. The name of the Deployment.
 - `metadata.namespace`: Namespaces are some kind of workspaces. You can use it to organize your Kubernetes objects. I'll use the `default` for simplicity.
 - `metadata.labels`: Whatever you want. Just choose a key and a value. Labels are another kind of organization and it can be used to filter objects in your cluster. The key `app` that I created will be used to find some objects in the process of deployment.
 
-#### Part 2: Deployment object specification
+### Part 2: Deployment object specification
 
 ```yaml
 # <... apiVersion, kind, metadata ...>
@@ -208,7 +206,7 @@ spec:
 
 Note: Do not set `maxSurge` and `maxUnavailable` both zero.
 
-#### Part 3: Deployment (orchestrator) selector
+### Part 3: Deployment (orchestrator) selector
 
 ```yaml
 # <... apiVersion, kind, metadata ...>
@@ -221,7 +219,7 @@ spec:
 
 - `selector.matchLabels`: It's like a filter that will assign every pod that are labeled with specifics key-value pairs to this deployment. In this case, the label are `app` and the value are `ml-api`.
 
-#### Part 4: Deployment template
+### Part 4: Deployment template
 
 ```yaml
 # <... apiVersion, kind, metadata ...>
@@ -262,9 +260,9 @@ spec:
 - `template.spec.containers.lifecycle.preStop.exec.command`: This sleep command is just to wait a pod to be terminated before kill it. With this, we eliminate a possible crash in a request process.
 - `template.spec.containers.readinessProbe`: This is the definitions that will probe if a pod is ready or not. To understand how `readinessProbe` works, I recommend you to read Keilan Jackson's article [[6]](#L6).
 
-#### Part 5: Deploying a Google Cloud Endpoint service
+### Part 5: Deploying a Google Cloud Endpoint service
 
-To protect the application, we also need to deploy a Google Cloud Endpoint software image in our pod, configure it to listen the application defined port (8080) and expose this application in another port. To do that, we must include another container in the list of the pod's container images.
+To protect the application, we also need to deploy a Google Cloud Endpoint software image in our pod, configure it to listen the application port defined above (8080) and expose this application in another port. To do that, we must include another container in the list of the pod's container images.
 
 ```yaml
 # <... apiVersion, kind, metadata ...>
@@ -287,27 +285,68 @@ spec:
           - containerPort: 8081
 ```
 
+Google Cloud Endpoints will help to protect, monitor, analyze and serve the model application. The image registry `gcr.io/endpoints-release/endpoints-runtime:1` is a container that runs an Extensible Service Proxy (ESP) with the following arguments and values:
 
+- `--http_port=8081`: Port that will serve the ESP. This port must be different of the application defined port (8080).
+- `--backend=127.0.0.1:8080`: The ESP and the model application are in the same pod. So, it can listen to each other. This is the address of the model application.
+- `--service`: Here you'll have to put the name of your Cloud Endpoints service. It has a pattern: `<NAME>.endpoints.<PROJECT_ID>.cloud.goog`. I'll show later in this article how do you create this service. A choose `ml-model` as name and don't put `PROJECT_ID` because I'll replace this string in the CI/CD process.
+- `--rollout_strategy=managed`: This option will automatically uses the latest service configuration, without having to re-deploy or restart it.
 
-#### Part 6: Service definition
+To understand what ESP is, I recommend you to read this Google Cloud Endpoints documentation article [[7]](#L7).
 
-When Service object is created to expose only our container image, all the worl can access
+### Part 6: Service definition
 
+Now, I'll describe the `k8s/service.yaml` YAML configuration file.
 
+When Service object is created to expose only our container image, all the world can access it. But, remember that an ESP was deployed together with the model application to protect it. So, this Service must point to this ESP.
 
-### A secure Kubernetes deployment using Google Cloud Endpoints
+```yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: ml-service-lb
+  namespace: default
+  labels:
+    app: ml-api
+spec:
+  type: LoadBalancer
+  ports:
+  - port: 80
+    targetPort: 8081
+  selector:
+    app: ml-api
+```
+
+Similar to the Deployment, a Service has `apiVersion`, `kind`, `metadata` and `spec`. I recommend you to choose the same label `app` at its value of the Deployment.
+
+- `spec.type`: A Load Balancer will try to equally distribute the requests among the pods in your Kubernetes.
+- `spec.ports`: List of ports to be exposed by the service.
+- `spec.ports.port`: The port that will be exposed. The port 80 is a default port, so you can omit it when you are sending requests to the application.
+- `spec.ports.targetPort`: The port that our application is running in the pods. In this case, I put an ESP to access the model application itself. So we have to choose its port (8081).
+- `spec.selector`: As the Deployment selector, this will filter the pods with an specific label (`app: ml-api`).
+
+You can deploy this objects and its specifications with one command line: `kubectl apply -f k8s/`, where the folder `k8s/` is where your files are in.
+
+## Configure a Google Cloud Endpoints service
+
+To deploy this Google Cloud Endpoints service we'll use a YAML configuration file as well. I made a configuration that serves our `/predict`route with POST method (as was defined). So, I'll only show the main part of the configuration.
+
+```yaml
+swagger: "2.0"
+info:
+  description: "Machine Learning Model Endpoints API."
+  title: "Endpoints ML API"
+  version: "1.0.0"
+host: <HOST_NAME>
+```
+
+....
 
 ```
-<...>
+...
 ```
 
-### Configuring a Service to expose the application
-
-```
-<...>
-```
-
-
+....
 
 ## Continuous Integration
 
@@ -346,4 +385,6 @@ To check if everything is up you can use the command `kubectl get all`. To be mo
 <a name="L5">[5]</a> Red Hat, ["What does an API gateway do?"](https://www.redhat.com/en/topics/api/what-does-an-api-gateway-do). _(visited May 10, 2020)_
 
 <a name="L6">[6]</a> Keilan Jackson, ["Kubernetes Rolling Update Configuration"](https://www.bluematador.com/blog/kubernetes-deployments-rolling-update-configuration). February 26, 2020. _(visited in May 11, 2020)_
+
+<a name="L7">[7]</a> Google Cloud Endpoints Documentation, ["Comparando Extensible Service Proxy com Endpoints Frameworks"](https://cloud.google.com/endpoints/docs/frameworks/frameworks-extensible-service-proxy). _(visited in May 12, 2020)_
 
