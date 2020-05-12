@@ -151,19 +151,23 @@ What is Kubernetes?
 
 What is a Deployment?
 
+### Google Cloud Endpoints
+
+What is? Credentials and API Keys
+
 ## Deploying an application in Kubernetes
 
 Deploy an application in Kubernetes is very simple. You only need some YAML configuration file templates. In this project I brought you two of them. A file to the deployment itself and another to the service that will expose the application. If you need to deploy you own model, you will need just to change some names, labels and container information sections. This two files are in folder `k8s`. Take a look over there.
 
-**IMPORTANT:** *In Kubernetes, when you expose an application service, all the world can access it. This isn't secure and you'll need a API gateway to expose it. I'll use Google Cloud Endpoints to do that. If you don't know the benefits of an API gateway, check this simple Red Hat article [[5]](#L5).*
+**IMPORTANT:** *In Kubernetes, when you expose an application service, all the world can access it. This isn't secure and you'll need a API gateway to expose it. I'll use Google Cloud Endpoints to do that. If you don't know the benefits of an API gateway, check this simple Red Hat's article [[5]](#L5).*
 
-### A simple Kubernetes deployment (unsecure)
+### A simple Kubernetes deployment
 
 Kubernetes has lots of objects, take a look at [this table](https://kubernetes.io/docs/reference/kubectl/overview/#resource-types), it's huge. However, in this project I'll need only two of them: Deployment and Service objects. 
 
-First, let's go with the Deployment object described in `k8s/deployment.yaml`. To explain all the sections of this YAML configuration file, I'll break it in pieces.
+First, let's go with the Deployment object described in `k8s/deployment.yaml`. To explain all the sections of this YAML configuration file, I'll break it in parts 1 to 5. And then, I'll go to the `k8s/service.yaml` in part 6.
 
-#### Piece 1: The Deployment object definition
+#### Part 1: Deployment object definition
 
 ```yaml
 apiVersion: apps/v1
@@ -179,11 +183,12 @@ metadata:
 - `kind`: What kind of object you want to create. In this case, a Deployment.
 - `metadata.name`: Whatever you want. The name of the Deployment.
 - `metadata.namespace`: Namespaces are some kind of workspaces. You can use it to organize your Kubernetes objects. I'll use the `default` for simplicity.
-- `metadata.labels`: Whatever you want. Just choose a key and a value. Labels are another kind of organization and it can be used to filter objects in your cluster. The key `app` that I created will be used find some objects in process of deployment.
+- `metadata.labels`: Whatever you want. Just choose a key and a value. Labels are another kind of organization and it can be used to filter objects in your cluster. The key `app` that I created will be used to find some objects in the process of deployment.
 
-#### Piece 2: The Deployment object specification
+#### Part 2: Deployment object specification
 
 ```yaml
+# <... apiVersion, kind, metadata ...>
 spec:
   replicas: 2
   minReadySeconds: 5
@@ -195,17 +200,18 @@ spec:
 ```
 
 - `replicas`: Number of pods running the deployment of the containers images that will be described below. Scale as you want.
-- `minReadySeconds`: Waiting time after the deployment of a new pod is ready to use. I'll describe below how do we know it is ready.
+- `minReadySeconds`: Waiting time after a new pod is ready to use. I'll describe below how do we know it is ready.
 - `strategy`: This configuration is to set the behavior in case of a re-deployment.
-- `strategy.type`: Setting this as RollingUpdate will make your re-deployment smooth. If you want to understand more about rolling updates, please go to Keilan Jackson article [[6]](#L6).
+- `strategy.type`: Setting this as RollingUpdate will make your re-deployment smooth. If you want to understand more about rolling updates, please go to Keilan Jackson's article [[6]](#L6).
 - `strategy.rollingUpdate.maxSurge`: The number of pods that can be created above the defined number in `replicas`.  Can be integer or percentage (rounded down).
 - `strategy.rollingUpdate.maxUnavailable`: The number of pods that can be unavailable during the update process in comparison with `replicas`. Can be integer or percentage (rounded up).
 
 Note: Do not set `maxSurge` and `maxUnavailable` both zero.
 
-#### Piece 3: The selector
+#### Part 3: Deployment (orchestrator) selector
 
 ```yaml
+# <... apiVersion, kind, metadata ...>
 spec:
   # <... replicas, minReadySeconds, strategy ...>
   selector:
@@ -215,9 +221,10 @@ spec:
 
 - `selector.matchLabels`: It's like a filter that will assign every pod that are labeled with specifics key-value pairs to this deployment. In this case, the label are `app` and the value are `ml-api`.
 
-#### Piece 4: The template
+#### Part 4: Deployment template
 
 ```yaml
+# <... apiVersion, kind, metadata ...>
 spec:
   # <... replicas, minReadySeconds, strategy, selector ...>
   template:
@@ -231,20 +238,62 @@ spec:
       	  image: gcr.io/PROJECT_ID/gkecicd:COMMIT_SHA
       	  ports:
       	  	- containerPort: 8080
+      	  lifecycle:
+      	  	preStop:
+              exec:
+                command: [ "sh", "-c", "sleep 5" ]
+          readinessProbe:
+            initialDelaySeconds: 5
+            periodSeconds: 5
+            successThreshold: 1
+            httpGet:
+              path: /
+              port: 8080
 ```
 
-- `template`: This will be the template of the specification for deploying pods when needed, e.g., when a pod must be killed and replaced.
+- `template`: This will be the template for deploying pods when needed, e.g., when a pod must be killed and replaced.
 - `template.metadata.name`: Whatever you want. The prefix name of the Pod.
-- `template.metadata.labels`: This needs to match the Selector filter in Piece 3.
+- `template.metadata.labels`: This needs to match the Selector filter in Part 3.
 - `template.spec`: Pod specifications.
-- `template.spec.containers`: List of the pods' container images.
+- `template.spec.containers`: List of the pods' container images. Every "-" (dash) is a new item of the list.
 - `template.spec.containers.name`: Whatever you want.
-- `template.spec.containers.image`: Container image registry in Google Container Registry
+- `template.spec.containers.image`: GKE can access Google Container Registry, so I used it. My image name is `gkecicd`. `PROJECT_ID` and `COMMIT_SHA` *are not* environment variables, Kubernetes can't access it. So, we have to replace it somewhere.
 - `template.spec.containers.ports.containerPort`: Every pod has an IP. The `containerPort` will expose the defined port of the IP to the Kubernetes cluster. In the Dockerfile was defined the port 8080, so it must be here too.
+- `template.spec.containers.lifecycle.preStop.exec.command`: This sleep command is just to wait a pod to be terminated before kill it. With this, we eliminate a possible crash in a request process.
+- `template.spec.containers.readinessProbe`: This is the definitions that will probe if a pod is ready or not. To understand how `readinessProbe` works, I recommend you to read Keilan Jackson's article [[6]](#L6).
 
+#### Part 5: Deploying a Google Cloud Endpoint service
+
+To protect the application, we also need to deploy a Google Cloud Endpoint software image in our pod, configure it to listen the application defined port (8080) and expose this application in another port. To do that, we must include another container in the list of the pod's container images.
+
+```yaml
+# <... apiVersion, kind, metadata ...>
+spec:
+  # <... replicas, minReadySeconds, strategy, selector ...>
+  template:
+    # <... metadata ...>
+    spec:
+      containers:
+      	# <... My container specs ...>
+      	- name: esp
+          image: gcr.io/endpoints-release/endpoints-runtime:1
+          args: [
+            "--http_port", "8081",
+            "--backend", "127.0.0.1:8080",
+            "--service", "ml-model.endpoints.PROJECT_ID.cloud.goog",
+            "--rollout_strategy", "managed",
+          ]
+          ports:
+          - containerPort: 8081
 ```
-This is enough to have an application that can be called through the Kubernetes cluster ...
-```
+
+
+
+#### Part 6: Service definition
+
+When Service object is created to expose only our container image, all the worl can access
+
+
 
 ### A secure Kubernetes deployment using Google Cloud Endpoints
 
@@ -297,3 +346,4 @@ To check if everything is up you can use the command `kubectl get all`. To be mo
 <a name="L5">[5]</a> Red Hat, ["What does an API gateway do?"](https://www.redhat.com/en/topics/api/what-does-an-api-gateway-do). _(visited May 10, 2020)_
 
 <a name="L6">[6]</a> Keilan Jackson, ["Kubernetes Rolling Update Configuration"](https://www.bluematador.com/blog/kubernetes-deployments-rolling-update-configuration). February 26, 2020. _(visited in May 11, 2020)_
+
