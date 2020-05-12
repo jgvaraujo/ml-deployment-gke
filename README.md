@@ -258,7 +258,7 @@ spec:
 - `template.spec.containers`: List of the pods' container images. Every "-" (dash) is a new item of the list.
 - `template.spec.containers.name`: Whatever you want.
 - `template.spec.containers.image`: GKE can access Google Container Registry, so I used it. My image name is `gkecicd`. `PROJECT_ID` and `COMMIT_SHA` *are not* environment variables, Kubernetes can't access it. So, we have to replace it somewhere.
-- `template.spec.containers.ports.containerPort`: Every pod has an IP. The containerPort will expose the defined port of the IP to the Kubernetes cluster. In the Dockerfile was defined the port 8080, so it must be here too.
+- `template.spec.containers.ports.containerPort`: Every pod has an IP. The `containerPort` will expose the defined port of the IP to the Kubernetes cluster. In the Dockerfile was defined the port 8080, so it must be here too.
 - `template.spec.containers.lifecycle.preStop.exec.command`: This sleep command is just to wait a pod to be terminated before kill it. With this, we eliminate a possible crash in a request process.
 - `template.spec.containers.readinessProbe`: This is the definitions that will probe if a pod is ready or not. To understand how `readinessProbe` works, I recommend you to read Keilan Jackson's article [[6]](#L6).
 
@@ -274,7 +274,7 @@ spec:
     # <... metadata ...>
     spec:
       containers:
-      	# <... My container specs ...>
+        # <... My container specs ...>
       	- name: esp
           image: gcr.io/endpoints-release/endpoints-runtime:1
           args: [
