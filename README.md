@@ -435,8 +435,7 @@ steps:
 
 ## Walkthrough <a name="WT"></a>
 
-> *\- Can we use this project to test it in Google Cloud?
-> \- Of course! Lets do it right now!*
+> *\- Can we use this project to test it in Google Cloud?*<br>*\- Of course! Lets do it right now!*
 
 In this section you'll see how easy is to deploy this pipeline. I'll break it in steps to make it even simple.
 
