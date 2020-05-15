@@ -29,18 +29,29 @@ gcloud services enable container.googleapis.com \
 
 To work with Kubernetes, be sure that you have `kubectl` installed in you machine. `kubectl`is a command line tool for controlling *Kubernetes* clusters. If you don't, please read the installation guide [[1]](#L1). I recommend you to install `kubectl`via [Homebrew](https://docs.brew.sh/Homebrew-on-Linux).
 
-## Article flow
-
-```
-...
-```
-
-
-
 ## Project tree
 
 ```
-...
+ml-deployment-gke/
+├── README.md
+├── cloudbuild.yaml
+├── Dockerfile
+├── app
+│   ├── ml-app.py
+│   ├── ml-model.pkl
+│   └── requirements.txt
+├── endpoint
+│   ├── endpoint-config.sh
+│   └── openapi.yaml
+├── k8s
+│   ├── deployment.yaml
+│   └── service.yaml
+├── caller/...
+├── train/...
+├── utils/...
+└── LICENSE
+
+6 directories, 21 files
 ```
 
 ## Toy problem & the model entity
@@ -289,7 +300,7 @@ Google Cloud Endpoints will help to protect, monitor, analyze and serve the mode
 
 - `--http_port=8081`: Port that will serve the ESP. This port must be different of the application defined port (8080).
 - `--backend=127.0.0.1:8080`: The ESP and the model application are in the same pod. So, it can listen to each other. This is the address of the model application.
-- `--service`: Here you'll have to put the name of your Cloud Endpoints service. It has a pattern: `<NAME>.endpoints.<PROJECT_ID>.cloud.goog`. I'll show later in this article how do you create this service. A choose `ml-model` as name and don't put `PROJECT_ID` because I'll replace this string in the CI/CD process.
+- `--service`: Here you'll have to put the name of your Cloud Endpoints service. It has a pattern: `<NAME>.endpoints.<PROJECT_ID>.cloud.goog`. I'll show later in this article how do you create this service. I choose `ml-model` as name and don't put `PROJECT_ID` because I'll replace this string in the CI/CD process (you can do the same with the service NAME).
 - `--rollout_strategy=managed`: This option will automatically uses the latest service configuration, without having to re-deploy or restart it.
 
 To understand what ESP is, I recommend you to read this Google Cloud Endpoints documentation article [[7]](#L7).
@@ -329,30 +340,122 @@ You can deploy this objects and its specifications with one command line: `kubec
 
 ## Configure a Google Cloud Endpoints service
 
-To deploy this Google Cloud Endpoints service we'll use a YAML configuration file as well. I made a configuration that serves our `/predict`route with POST method (as was defined). So, I'll only show the main part of the configuration.
+To deploy this Google Cloud Endpoints service we'll use a YAML configuration file as well. This file is `endpoint/openapi.yaml`. I made a configuration that serves our `/predict`route with POST method (as was defined). So, I'll only show the main part of the configuration:
 
 ```yaml
 swagger: "2.0"
+# This infos will appear in Google Cloud Endpoints API page
 info:
-  description: "Machine Learning Model Endpoints API."
-  title: "Endpoints ML API"
+  description: "Some description"
+  title: "Name of the API"
   version: "1.0.0"
-host: <HOST_NAME>
+host: HOST_NAME
 ```
 
-....
+The `HOST_NAME` must be in this pattern: `<NAME>.endpoints.<PROJECT_ID>.cloud.goog`, but there is no need to fill this with you use the `endpoint/endpoint_config.sh` commands:
 
+```bash
+# Environment variables to omit PROJECT_ID
+PROJECT_ID=$(gcloud config get-value project)
+ENDPOINTS_SERVICE_NAME="ml-model.endpoints.${PROJECT_ID}.cloud.goog"
+
+# Fill HOST_NAME in openapi.yaml file
+sed "s/HOST_NAME/${ENDPOINTS_SERVICE_NAME}/g" openapi.yaml > /tmp/openapi.yaml
+
+# Deploy and enable the service
+gcloud endpoints services deploy /tmp/openapi.yaml
+gcloud services enable $ENDPOINTS_SERVICE_NAME
 ```
-...
+
+Again, I choose `ml-model` as my API name, but feel free to change. Remember, you have to change in this HOST_NAME and in the `k8s/deployment.yaml` file. You can run this now, you won't be charged.
+
+## Google Cloud Build - Image building trigger
+
+In my previous project in GitHub, I described how to set a Google Cloud Build trigger to a GitHub repository. Please go to [Google Cloud Buid - The trigger](https://github.com/jgvaraujo/ml-deployment-on-gcloud#google-cloud-build---the-trigger) section in this project to see how to do it [[4]](#L4).
+
+## The `cloudbuild.yaml`
+
+### Step 1: Pull an existing container image if it is already built
+
+```yaml
+steps:
+  - name: 'gcr.io/cloud-builders/docker'
+    entrypoint: 'bash'
+    args:
+      - '-c'
+      - 'docker pull gcr.io/$PROJECT_ID/gkecicd:latest || exit 0'
 ```
 
-....
 
-## Continuous Integration
 
-In my previous project in GitHub, I described how to set a Google Cloud Build trigger to a GitHub repository. Please go to [Git Repo](https://github.com/jgvaraujo/ml-deployment-on-gcloud#git-repo) section in this project to see how to do it [[4]](#L4).
+### Step 2:  Build the new application image using the previous one
 
-## Kubernetes
+```yaml
+steps:
+  # <...>
+  - name: 'gcr.io/cloud-builders/docker'
+    args:
+      - 'build'
+      - '-t'
+      - 'gcr.io/$PROJECT_ID/gkecicd:latest'
+      - '-t'
+      - 'gcr.io/$PROJECT_ID/gkecicd:$COMMIT_SHA'
+      - '--cache-from'
+      - 'gcr.io/$PROJECT_ID/gkecicd:latest'
+      - '.'
+```
+
+
+
+### Step 3: Push the image to Google Cloud Registry
+
+```yaml
+steps:
+  # <...>
+  - name: 'gcr.io/cloud-builders/docker'
+    args:
+      - 'push'
+      - 'gcr.io/$PROJECT_ID/gkecicd'
+```
+
+
+
+### Step 4: Replace variables in YAML file
+
+```yaml
+steps:
+  # <...>
+  - name: 'gcr.io/cloud-builders/gcloud'
+    entrypoint: 'bash'
+    args:
+      - '-c'
+      - |
+        sed -i "s/PROJECT_ID/${PROJECT_ID}/g" k8s/deployment.yaml && \
+        sed -i "s/COMMIT_SHA/${COMMIT_SHA}/g" k8s/deployment.yaml
+```
+
+
+
+### Step 5: Deploy the model application in Kubernetes
+
+```yaml
+steps:
+  # <...>
+  - name: 'gcr.io/cloud-builders/kubectl'
+    args:
+      - 'apply'
+      - '-f'
+      - 'k8s/'
+    env:
+      - 'CLOUDSDK_COMPUTE_ZONE=southamerica-east1-b'
+      - 'CLOUDSDK_CONTAINER_CLUSTER=ml-cluster'
+```
+
+
+
+## Walkthrough
+
+**IMPORTANT:** I have a free account on Google Cloud Platform and **all my tests** to this project cost around 3 dollars! Please, go ahead and try this commands. I'll put the necessary code to leave your project as it was.
 
 Now, we create our Kubernetes cluster in GKE using this simple command:
 
