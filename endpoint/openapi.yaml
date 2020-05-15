@@ -34,6 +34,20 @@ paths:
           $ref: "#/definitions/prediction"
       security:
       - api_key: []
+  "/":
+    get:
+      description: "Model alive function"
+      operationId: "alive-echo"
+      consumes: []
+      produces:
+        - "text/plain"
+      responses:
+        200:
+          description: "Alive echo"
+          schema:
+            type: string
+      security:
+        - api_key: []
   "/auth/info/googlejwt":
     get:
       description: "Returns the requests' authentication information."
