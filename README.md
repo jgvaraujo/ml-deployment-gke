@@ -474,7 +474,7 @@ Now it's time to some action.
 
 It's very simple to do this in GitHub. Click in _Import repository_ > paste this repository's clone URL > choose a name for your new repository > and click in _Begin import_. Check this two images:
 
-<img src="/home/jgui/Workspace/mainpy/20200507 - Model CICD on GKE/ml-deployment-gke/screenshots/dup_repo_01.png" alt="dup_repo_01" style="zoom:165%;" /> <img src="/home/jgui/Workspace/mainpy/20200507 - Model CICD on GKE/ml-deployment-gke/screenshots/dup_repo_02.png" alt="dup_repo_02" style="zoom:70%;" />
+<img src="screenshots/dup_repo_01.png" alt="dup_repo_01" style="zoom:165%;" /> <img src="screenshots/dup_repo_02.png" alt="dup_repo_02" style="zoom:70%;" />
 
 ### Step 2: Create a Google Cloud Build trigger to this new repository
 
@@ -538,7 +538,7 @@ Check History tab in Google Cloud Build interface and you'll see your building p
 
 This project are describing an API that is protected, so the only way to access it is with credentials. You can create a service account to access it, but the simplest way is to creating a API Key. See the images below to know how to do that:
 
-<img src="/home/jgui/Workspace/mainpy/20200507 - Model CICD on GKE/ml-deployment-gke/screenshots/apikey_01.png" alt="apikey_01" style="zoom:70%;" /> <img src="/home/jgui/Workspace/mainpy/20200507 - Model CICD on GKE/ml-deployment-gke/screenshots/apikey_02.png" alt="apikey_02" style="zoom:80%;" />
+<img src="screenshots/apikey_01.png" alt="apikey_01" style="zoom:70%;" /> <img src="screenshots/apikey_02.png" alt="apikey_02" style="zoom:80%;" />
 
 If you want to restrict your API key to use only in your model application in edit options you'll see _API Restrictions_ section, click in _Restrick key_ and then filter the name **Endpoints ML API**. This API name was defined in `title` section in `endpoint/openapi.yaml` file, the Cloud Endpoints service configuration file.
 
