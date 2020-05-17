@@ -1,6 +1,6 @@
 #!/bin/bash
 
-gcloud init --skip-diagnostics
+gcloud init --skip-diagnostics --configuration new-config
 
 PROJECT_ID=$(gcloud config get-value project)
 PROJECT_NUMBER=$(gcloud projects describe $PROJECT_ID --format='get(projectNumber)')

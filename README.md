@@ -446,6 +446,8 @@ In this section you'll see how easy is to deploy this pipeline. I'll break it in
 First, we need to bind a role to the Google Cloud Build service account as a Kubernetes Engine Developer. We can do this in _point and click_ in the settings of Cloud Build or through terminal using [Google Cloud SDK](https://cloud.google.com/sdk/install) (local or in [cloud shell interface](https://ssh.cloud.google.com/cloudshell/)):
 
 ```bash
+gcloud init --configuration new-config --skip-diagnostics
+
 PROJECT_ID=$(gcloud config get-value project)
 PROJECT_NUMBER=$(gcloud projects describe $PROJECT_ID --format='get(projectNumber)')
 
@@ -484,12 +486,14 @@ In my previous project in GitHub, I described how to set a Google Cloud Build tr
 
 ### Step 3: Clone this new repository and enter in the project folder
 
-Run this simple commands replacing YOUR_USERNAME and YOUR_REPO_NAME to your GitHub user and your new repository name.
+Clone your new repository and enter in its folder.
 
 ```bash
 git clone https://github.com/YOUR_USERNAME/YOUR_REPO_NAME.git
 cd YOUR_REPO_NAME
 ```
+
+Replace YOUR_USERNAME and YOUR_REPO_NAME to your GitHub user and your new repository name.
 
 ###  Step 4: Create a Google Cloud Endpoint service
 
@@ -497,10 +501,10 @@ Once you are inside the project folder, you just have to execute the command bel
 
 ```bash
 # enter in endpoint folder, execute a script and return to project folder
-cd endpoint && source endpoint/endpoint-config.sh && cd ..
+cd endpoint && source endpoint-config.sh && cd ..
 ```
 
-This command will take 2-3 minutes to run.
+This command will take 2-3 minutes to run. Ignore the warnings.
 
 ### Step 5: Create a simple cluster
 
