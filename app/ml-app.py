@@ -1,19 +1,21 @@
 from flask import Flask, request, jsonify
 
 import pandas as pd
-import pickle, logging, os
+import pickle
+import logging
 
 with open('ml-model.pkl', 'rb') as f:
     MODEL = pickle.load(f)
 
-FEATURES_MASK = ['CRIM', 'ZN', 'INDUS', 'CHAS', 'NOX', 'RM', 'AGE', 'DIS',\
+FEATURES_MASK = ['CRIM', 'ZN', 'INDUS', 'CHAS', 'NOX', 'RM', 'AGE', 'DIS',
                  'RAD', 'TAX', 'PTRATIO', 'B', 'LSTAT']
 
 app = Flask(__name__)
 
-@app.route('/', methods=['GET'])
+@app.route('/check', methods=['GET'])
 def server_check():
     return "I'M ALIVE!"
+
 
 @app.route('/predict', methods=['POST'])
 def predictor():
@@ -30,5 +32,6 @@ def predictor():
 
     return jsonify(status='ok', predict=pred)
 
-if __name__=='__main__':
-    app.run( debug=True, host='0.0.0.0' )
+
+if __name__ == '__main__':
+    app.run(debug=True, host='0.0.0.0')

@@ -504,7 +504,7 @@ Once you are inside the project folder, you just have to execute the command bel
 cd endpoint && source endpoint-config.sh && cd ..
 ```
 
-This command will take 2-3 minutes to run. Ignore the warnings.
+This command will take 2-3 minutes to run. You can safely ignore the warnings about the paths in the `openapi.yaml` file not requiring an API key (4th paragraph in [here](https://cloud.google.com/endpoints/docs/openapi/get-started-kubernetes-engine#api_configure)).
 
 ### Step 5: Create a simple cluster
 
@@ -526,8 +526,6 @@ gcloud container clusters create $_CLUSTER \
 
 This command will take about 2-3 minutes to run. After that, to check if everything is up you can use the command `kubectl get all`. To be more specific, I like to use `kubectl get nodes,pods,svc`.
 
-In the list of services (`kubectl get svc`) probably you will see that your service (`ml-service-lb`) have a pending External IP. Keep running `kubectl get svc` until you have your model application External IP. This will be the address of your API, write it down somewhere.
-
 ### Step 6: Push your repository!
 
 Now, to deploy your model application you just have to make a `git push`. **:)**
@@ -537,6 +535,8 @@ git push origin master
 ```
 
 Check History tab in Google Cloud Build interface and you'll see your building process executing. If this your first deploy it will take 2-3 minutes, but if you are updating your application through this pipeline, it will take about 30 seconds.
+
+After that, in the list of services (`kubectl get svc`) probably you will see that your service (`ml-service-lb`) have a pending External IP. You can run `watch -n 1 kubectl get svc` to run the command every second. Wait until you have your model application External IP. This will be the address of your API, write it down somewhere.
 
 ### Step 7: Create an API key
 

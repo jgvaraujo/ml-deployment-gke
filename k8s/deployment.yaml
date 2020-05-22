@@ -39,7 +39,7 @@ spec:
           periodSeconds: 5
           successThreshold: 1
           httpGet:
-            path: /
+            path: /check
             port: 8080
       # [END My container]
       # [START Extensible Service Proxy (ESP)]

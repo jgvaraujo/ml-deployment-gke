@@ -5,6 +5,9 @@ info:
   title: "Endpoints ML API"
   version: "1.0.0"
 host: "HOST_NAME"
+#x-google-endpoints:
+#- name: "HOST_NAME"
+#  target: "SERVICE_IP"
 # [END swagger]
 consumes:
 - "application/json"
@@ -14,12 +17,24 @@ schemes:
 - "http"
 #- "https"
 paths:
+  "/check":
+    get:
+      description: "Model alive function"
+      operationId: "aliveMessage"
+      parameters: []
+      produces:
+        - "text/html"
+      responses:
+        "200":
+          description: "Alive message"
+          schema:
+            type: string
+      security:
+        - api_key: []
   "/predict":
     post:
       description: "Model prediction function"
       operationId: "predict"
-      produces:
-      - "application/json"
       responses:
         200:
           description: "Prediction"
@@ -34,20 +49,6 @@ paths:
           $ref: "#/definitions/prediction"
       security:
       - api_key: []
-  "/":
-    get:
-      description: "Model alive function"
-      operationId: "alive-echo"
-      consumes: []
-      produces:
-        - "text/plain"
-      responses:
-        200:
-          description: "Alive echo"
-          schema:
-            type: string
-      security:
-        - api_key: []
   "/auth/info/googlejwt":
     get:
       description: "Returns the requests' authentication information."

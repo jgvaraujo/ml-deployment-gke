@@ -18,7 +18,7 @@ gcloud container clusters create $_CLUSTER \
     --zone $_ZONE
 
 # check nodes state
-  kubectl get nodes,pods,svc
+kubectl get nodes,pods,svc
 
 # check pods state every 0.5 seconds
 # this command is greate to see how a new deployment is going
