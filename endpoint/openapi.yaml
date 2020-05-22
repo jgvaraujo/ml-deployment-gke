@@ -1,13 +1,13 @@
 # [START swagger]
 swagger: "2.0"
 info:
-  description: "Machine Learning Model Endpoints API."
-  title: "Endpoints ML API"
+  title: "My ML API"
   version: "1.0.0"
-host: "HOST_NAME"
-#x-google-endpoints:
-#- name: "HOST_NAME"
-#  target: "SERVICE_IP"
+  description: "Machine Learning Model Endpoints API."
+host: "ENDPOINTS_SERVICE_NAME"
+x-google-endpoints:
+- name: "ENDPOINTS_SERVICE_NAME"
+  target: "$SERVICE_IP"
 # [END swagger]
 consumes:
 - "application/json"

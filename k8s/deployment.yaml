@@ -48,7 +48,7 @@ spec:
         args: [
           "--http_port", "8081",
           "--backend", "127.0.0.1:8080",
-          "--service", "ml-model.endpoints.PROJECT_ID.cloud.goog",
+          "--service", "SERVICE_NAME.endpoints.PROJECT_ID.cloud.goog",
           "--rollout_strategy", "managed",
         ]
         ports:

@@ -73,7 +73,7 @@ After that, I created a variable that I named `app` and it's a Flask object. Thi
 I created one function for each method. The first is a message to know that the application is alive:
 
 ```python
-@app.route('/', methods=['GET'])
+@app.route('/check', methods=['GET'])
 def server_check():
     return "I'M ALIVE!"
 ```
@@ -226,7 +226,7 @@ spec:
             periodSeconds: 5
             successThreshold: 1
             httpGet:
-              path: /
+              path: /check
               port: 8080
 ```
 
@@ -501,10 +501,12 @@ Once you are inside the project folder, you just have to execute the command bel
 
 ```bash
 # enter in endpoint folder, execute a script and return to project folder
-cd endpoint && source endpoint-config.sh && cd ..
+cd endpoint && \
+source endpoint-config.sh && \
+cd ..
 ```
 
-This command will take 2-3 minutes to run. You can safely ignore the warnings about the paths in the `openapi.yaml` file not requiring an API key (4th paragraph in [here](https://cloud.google.com/endpoints/docs/openapi/get-started-kubernetes-engine#api_configure)).
+This command will take 1-2 minutes to run. You can safely ignore the warnings about the paths in the `openapi.yaml` file not requiring an API key (4th paragraph in [here](https://cloud.google.com/endpoints/docs/openapi/get-started-kubernetes-engine#api_configure)).
 
 ### Step 5: Create a simple cluster
 
@@ -551,7 +553,7 @@ If you want to restrict your API key to use only in your model application in ed
 To see if your API is online, run this command:
 
 ```bash
-curl http://IP_ADDRESS/?key=ENDPOINTS_KEY
+curl http://IP_ADDRESS/check?key=ENDPOINTS_KEY
 ```
 
 Replace `IP_ADDRESS` with the External IP obtained in `kubectl get svc` and replace `ENDPOINTS_KEY` with the above created API key.

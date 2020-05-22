@@ -3,6 +3,7 @@ from flask import Flask, request, jsonify
 import pandas as pd
 import pickle
 import logging
+from datetime import datetime
 
 with open('ml-model.pkl', 'rb') as f:
     MODEL = pickle.load(f)
@@ -14,7 +15,8 @@ app = Flask(__name__)
 
 @app.route('/check', methods=['GET'])
 def server_check():
-    return "I'M ALIVE!"
+    now = datetime.now()
+    return "I'M ALIVE! " + str(now)
 
 
 @app.route('/predict', methods=['POST'])

@@ -29,7 +29,8 @@ steps:
       - '-c'
       - |
         sed -i "s/PROJECT_ID/${PROJECT_ID}/g" k8s/deployment.yaml && \
-        sed -i "s/COMMIT_SHA/${COMMIT_SHA}/g" k8s/deployment.yaml
+        sed -i "s/COMMIT_SHA/${COMMIT_SHA}/g" k8s/deployment.yaml && \
+        sed -i "s/SERVICE_NAME/ml-model/g" k8s/deployment.yaml
   # apply k8s manifest to my cluster
   - name: 'gcr.io/cloud-builders/kubectl'
     args:
