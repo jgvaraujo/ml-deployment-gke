@@ -13,12 +13,10 @@ FEATURES_MASK = ['CRIM', 'ZN', 'INDUS', 'CHAS', 'NOX', 'RM', 'AGE', 'DIS',
 
 app = Flask(__name__)
 
-
 @app.route('/check', methods=['GET'])
 def server_check():
     now = datetime.now().strftime('%d/%b/%Y - %H:%M:%S.%f\n')
     return "I'M ALIVE! - " + now.upper()
-
 
 @app.route('/predict', methods=['POST'])
 def predictor():
@@ -34,7 +32,6 @@ def predictor():
     pred = MODEL.predict(features)[0]
 
     return jsonify(status='ok', predict=pred)
-
 
 if __name__ == '__main__':
     app.run(debug=True, host='0.0.0.0')
