@@ -562,20 +562,24 @@ To see if your API is online, run this command:
 ```bash
 cd caller
 
-K8S_SERVICE_NAME="ml-service-lb"
-SERVICE_ADDRESS=$(kubectl get svc ${K8S_SERVICE_NAME} \
-    -o jsonpath={.status.loadBalancer.ingress[].ip})
-ENDPOINTS_KEY=<KEY>
-
-echo GET ADDREESS: http://${SERVICE_ADDRESS}/check?key=${ENDPOINTS_KEY}
-curl -X GET http://${SERVICE_ADDRESS}/check?key=${ENDPOINTS_KEY} && echo
-
-echo GET ADDREESS: http://${SERVICE_ADDRESS}/predict?key=${ENDPOINTS_KEY}
-curl -X POST -H "Content-type: application/json" -d @example.json\
-     http://${SERVICE_ADDRESS}/predict?key=${ENDPOINTS_KEY}
+JKEY="{.status.loadBalancer.ingress[].ip}"
+SERVICE_NAME="ml-service-lb"
+SERVICE_IP=$(kubectl get svc ${SERVICE_NAME} -o jsonpath=${JKEY})
+ENDPOINTS_KEY=<API-KEY>
 ```
 
-Replace `IP_ADDRESS` with the External IP obtained in `kubectl get svc` and replace `ENDPOINTS_KEY` with the above created API key.
+Replace `API-KEY` with the above created API key. You can get `SERVICE_IP` from `kubectl` or from Google Cloud's web console.
+
+```bash
+# A GET request example
+curl -X GET "http://${SERVICE_IP}/check?key=${ENDPOINTS_KEY}"
+```
+
+```bash
+# A POST request example
+curl -X POST -H "Content-type: application/json" -d @example.json\
+     "http://${SERVICE_IP}/predict?key=${ENDPOINTS_KEY}""
+```
 
 ## Cleaning everything
 

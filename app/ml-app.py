@@ -16,7 +16,7 @@ app = Flask(__name__)
 
 @app.route('/check', methods=['GET'])
 def server_check():
-    now = datetime.now().strftime('%d/%b/%Y - %H:%M:%S.%f')
+    now = datetime.now().strftime('%d/%b/%Y - %H:%M:%S.%f\n')
     return "I'M ALIVE! - " + now.upper()
 
 
