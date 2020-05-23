@@ -13,10 +13,11 @@ FEATURES_MASK = ['CRIM', 'ZN', 'INDUS', 'CHAS', 'NOX', 'RM', 'AGE', 'DIS',
 
 app = Flask(__name__)
 
+
 @app.route('/check', methods=['GET'])
 def server_check():
-    now = datetime.now()
-    return "I'M ALIVE! " + str(now)
+    now = datetime.now().strftime('%d/%b/%Y - %H:%M:%S.%f')
+    return "I'M ALIVE! - " + now.upper()
 
 
 @app.route('/predict', methods=['POST'])

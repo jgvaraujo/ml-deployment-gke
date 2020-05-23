@@ -7,7 +7,7 @@ info:
 host: "ENDPOINTS_SERVICE_NAME"
 x-google-endpoints:
 - name: "ENDPOINTS_SERVICE_NAME"
-  target: "$SERVICE_IP"
+  target: "SERVICE_IP"
 # [END swagger]
 consumes:
 - "application/json"

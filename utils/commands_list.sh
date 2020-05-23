@@ -20,6 +20,10 @@ gcloud container clusters create $_CLUSTER \
 # check nodes state
 kubectl get nodes,pods,svc
 
+# get service external ip
+SERVICE_NAME="ml-service-lb"
+kubectl get svc ${SERVICE_NAME} -o jsonpath={.status.loadBalancer.ingress[].ip}
+
 # check pods state every 0.5 seconds
 # this command is greate to see how a new deployment is going
 watch -n 0.5 kubectl get pods

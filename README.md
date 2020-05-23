@@ -319,25 +319,28 @@ info:
   description: "Some description"
   title: "Name of the API"
   version: "1.0.0"
-host: HOST_NAME
+host: ENDPOINTS_SERVICE_NAME
 ```
 
-The `HOST_NAME` must be in this pattern: `<NAME>.endpoints.<PROJECT_ID>.cloud.goog`, but there is no need to fill this if you use the `endpoint/endpoint_config.sh` commands:
+The `ENDPOINTS_SERVICE_NAME` must be in this pattern: `<SERVICE_NAME>.endpoints.<PROJECT_ID>.cloud.goog`, but there is no need to fill this if you use the `endpoint/endpoint_config.sh` commands:
 
 ```bash
 # Environment variables to omit PROJECT_ID
-PROJECT_ID=$(gcloud config get-value project)
-ENDPOINTS_SERVICE_NAME="ml-model.endpoints.${PROJECT_ID}.cloud.goog"
+export PROJECT_ID=$(gcloud config get-value project)
+export SERVICE_NAME="ml-model"
+export SERVICE_IP="SERVICE_IP"
 
-# Fill HOST_NAME in openapi.yaml file
-sed "s/HOST_NAME/${ENDPOINTS_SERVICE_NAME}/g" openapi.yaml > /tmp/openapi.yaml
+export ENDPOINTS_SERVICE_NAME="${SERVICE_NAME}.endpoints.${PROJECT_ID}.cloud.goog"
+
+# Replace environment variables in openapi.yaml file
+envsubst <openapi.yaml >/tmp/openapi.yaml
 
 # Deploy and enable the service
 gcloud endpoints services deploy /tmp/openapi.yaml
 gcloud services enable $ENDPOINTS_SERVICE_NAME
 ```
 
-Again, I choose `ml-model` as my API name, but feel free to change. Remember, you have to change it in this HOST_NAME and in the `k8s/deployment.yaml` file as well.
+Again, I choose `ml-model` as my API name, but feel free to change. If you change the service name, you must also change it in the `k8s/deployment.yaml` file.
 
 ## The `cloudbuild.yaml`
 
@@ -443,11 +446,15 @@ In this section you'll see how easy is to deploy this pipeline. I'll break it in
 
 **HINT**: If you don't have a Linux machine or don't want to install Google Cloud SDK in your machine, just go to the incredible [Google Cloud Shell](https://ssh.cloud.google.com/cloudshell/). It will provide you a machine and you will be able to execute all this commands. I recommend you to use Google Chrome browser to access this shell.
 
-First, we need to bind a role to the Google Cloud Build service account as a Kubernetes Engine Developer. We can do this in _point and click_ in the settings of Cloud Build or through terminal using [Google Cloud SDK](https://cloud.google.com/sdk/install) (local or in [cloud shell interface](https://ssh.cloud.google.com/cloudshell/)):
+First, lets set up `gcloud` configuration. Execute the below command and choose your user, project and default zone.
 
 ```bash
 gcloud init --configuration new-config --skip-diagnostics
+```
 
+We need to bind a role to the Google Cloud Build service account as a Kubernetes Engine Developer. We can do this in _point and click_ in the settings of Cloud Build or through terminal using [Google Cloud SDK](https://cloud.google.com/sdk/install) (local or in [cloud shell interface](https://ssh.cloud.google.com/cloudshell/)):
+
+```bash
 PROJECT_ID=$(gcloud config get-value project)
 PROJECT_NUMBER=$(gcloud projects describe $PROJECT_ID --format='get(projectNumber)')
 
@@ -484,31 +491,7 @@ In my previous project in GitHub, I described how to set a Google Cloud Build tr
 
 **IMPORTANT**: If you leave Google Cloud Build trigger activated, every time that you make a `git push` in the repository, it will build your repository. Leave it as activated for now.
 
-### Step 3: Clone this new repository and enter in the project folder
-
-Clone your new repository and enter in its folder.
-
-```bash
-git clone https://github.com/YOUR_USERNAME/YOUR_REPO_NAME.git
-cd YOUR_REPO_NAME
-```
-
-Replace YOUR_USERNAME and YOUR_REPO_NAME to your GitHub user and your new repository name.
-
-###  Step 4: Create a Google Cloud Endpoint service
-
-Once you are inside the project folder, you just have to execute the command below. A detailed explanation is in section _Configure a Google Cloud Endpoints service_.
-
-```bash
-# enter in endpoint folder, execute a script and return to project folder
-cd endpoint && \
-source endpoint-config.sh && \
-cd ..
-```
-
-This command will take 1-2 minutes to run. You can safely ignore the warnings about the paths in the `openapi.yaml` file not requiring an API key (4th paragraph in [here](https://cloud.google.com/endpoints/docs/openapi/get-started-kubernetes-engine#api_configure)).
-
-### Step 5: Create a simple cluster
+### Step 3: Create a simple cluster
 
 I create my Kubernetes cluster in GKE using this simple command in Linux terminal:
 
@@ -528,7 +511,18 @@ gcloud container clusters create $_CLUSTER \
 
 This command will take about 2-3 minutes to run. After that, to check if everything is up you can use the command `kubectl get all`. To be more specific, I like to use `kubectl get nodes,pods,svc`.
 
-### Step 6: Push your repository!
+### Step 4: Clone this new repository and enter in the project folder
+
+Clone your new repository and enter in its folder.
+
+```bash
+git clone https://github.com/YOUR_USERNAME/YOUR_REPO_NAME.git
+cd YOUR_REPO_NAME
+```
+
+Replace YOUR_USERNAME and YOUR_REPO_NAME to your GitHub user and your new repository name.
+
+### Step 5: Push your repository!
 
 Now, to deploy your model application you just have to make a `git push`. **:)**
 
@@ -539,6 +533,19 @@ git push origin master
 Check History tab in Google Cloud Build interface and you'll see your building process executing. If this your first deploy it will take 2-3 minutes, but if you are updating your application through this pipeline, it will take about 30 seconds.
 
 After that, in the list of services (`kubectl get svc`) probably you will see that your service (`ml-service-lb`) have a pending External IP. You can run `watch -n 1 kubectl get svc` to run the command every second. Wait until you have your model application External IP. This will be the address of your API, write it down somewhere.
+
+###  Step 6: Create a Google Cloud Endpoint service
+
+Once you are inside the project folder, you just have to execute the command below. A detailed explanation is in section _Configure a Google Cloud Endpoints service_.
+
+```bash
+# enter in endpoint folder, execute a script and return to project folder
+cd endpoint && \
+source endpoint-config.sh && \
+cd ..
+```
+
+This command will take 1-2 minutes to run. You can safely ignore the warnings about the paths in the `openapi.yaml` file not requiring an API key (4th paragraph in [here](https://cloud.google.com/endpoints/docs/openapi/get-started-kubernetes-engine#api_configure)).
 
 ### Step 7: Create an API key
 
@@ -553,7 +560,19 @@ If you want to restrict your API key to use only in your model application in ed
 To see if your API is online, run this command:
 
 ```bash
-curl http://IP_ADDRESS/check?key=ENDPOINTS_KEY
+cd caller
+
+K8S_SERVICE_NAME="ml-service-lb"
+SERVICE_ADDRESS=$(kubectl get svc ${K8S_SERVICE_NAME} \
+    -o jsonpath={.status.loadBalancer.ingress[].ip})
+ENDPOINTS_KEY=<KEY>
+
+echo GET ADDREESS: http://${SERVICE_ADDRESS}/check?key=${ENDPOINTS_KEY}
+curl -X GET http://${SERVICE_ADDRESS}/check?key=${ENDPOINTS_KEY} && echo
+
+echo GET ADDREESS: http://${SERVICE_ADDRESS}/predict?key=${ENDPOINTS_KEY}
+curl -X POST -H "Content-type: application/json" -d @example.json\
+     http://${SERVICE_ADDRESS}/predict?key=${ENDPOINTS_KEY}
 ```
 
 Replace `IP_ADDRESS` with the External IP obtained in `kubectl get svc` and replace `ENDPOINTS_KEY` with the above created API key.
