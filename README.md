@@ -581,6 +581,8 @@ curl -X POST -H "Content-type: application/json" -d @example.json\
      "http://${SERVICE_IP}/predict?key=${ENDPOINTS_KEY}""
 ```
 
+<img src="screenshots/api_access.gif" alt="apiaccess" style="zoom:100%;" />
+
 ## Cleaning everything
 
 Please, if you change some important feature as cluster name, cluster zone, service name and image name, replace it in below commands:
